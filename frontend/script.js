@@ -110,6 +110,18 @@ function createLoadingMessage() {
     return messageDiv;
 }
 
+// Helper function to format sources with clickable links
+function formatSources(sources) {
+    return sources.map(source => {
+        // If URL exists, make the source text itself clickable (no visible URL)
+        if (source.url) {
+            return `<div class="source-item"><a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source-link">${source.title}</a></div>`;
+        }
+        // No URL - render as plain text
+        return `<div class="source-item"><span class="source-text">${source.title}</span></div>`;
+    }).join('');
+}
+
 function addMessage(content, type, sources = null, isWelcome = false) {
     const messageId = Date.now();
     const messageDiv = document.createElement('div');
@@ -125,7 +137,7 @@ function addMessage(content, type, sources = null, isWelcome = false) {
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${formatSources(sources)}</div>
             </details>
         `;
     }

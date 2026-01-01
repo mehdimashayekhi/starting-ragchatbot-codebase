@@ -245,6 +245,42 @@ header h1 {
     color: var(--text-secondary);
 }
 
+/* Individual source item container */
+.source-item {
+    margin: 0.4rem 0;
+    padding: 0.5rem 0.75rem;
+    background: rgba(74, 144, 226, 0.08);
+    border-radius: 6px;
+    border-left: 3px solid var(--primary-color, #4a90e2);
+    transition: all 0.2s ease;
+}
+
+.source-item:hover {
+    background: rgba(74, 144, 226, 0.15);
+    transform: translateX(2px);
+}
+
+/* Clickable source links - visually distinct */
+.source-link {
+    color: var(--primary-color, #4a90e2);
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-block;
+    transition: color 0.2s ease;
+}
+
+/* Hover effect for visual feedback */
+.source-link:hover {
+    color: #357abd;
+    text-decoration: underline;
+}
+
+/* Non-clickable sources (course-only without lesson URLs) */
+.source-text {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
 /* Markdown formatting styles */
 .message-content h1,
 .message-content h2,
