@@ -11,7 +11,7 @@ import os
 
 from config import config
 from rag_system import RAGSystem
-from models import SourceCitation
+from models import SourceCitation, ChatHistoryItem
 
 # Initialize FastAPI app
 app = FastAPI(title="Course Materials RAG System", root_path="")
@@ -83,6 +83,75 @@ async def get_course_stats():
             total_courses=analytics["total_courses"],
             course_titles=analytics["course_titles"]
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chat-history", response_model=List[ChatHistoryItem])
+async def get_chat_history():
+    """Get list of recent chats with titles extracted from first user message"""
+    try:
+        chats = []
+        all_sessions = rag_system.session_manager.sessions
+
+        # Sort sessions by ID number (most recent first)
+        sorted_session_ids = sorted(
+            all_sessions.keys(),
+            key=lambda x: int(x.split('_')[1]),
+            reverse=True
+        )
+
+        # Limit to 10 most recent chats
+        for session_id in sorted_session_ids[:10]:
+            messages = all_sessions[session_id]
+
+            # Skip empty sessions
+            if not messages:
+                continue
+
+            # Find first user message for title
+            first_user_msg = None
+            for msg in messages:
+                if msg.role == "user":
+                    first_user_msg = msg.content
+                    break
+
+            if first_user_msg:
+                # Truncate title to 50 characters
+                title = first_user_msg[:50]
+                if len(first_user_msg) > 50:
+                    title += "..."
+
+                chats.append(ChatHistoryItem(
+                    session_id=session_id,
+                    title=title,
+                    message_count=len(messages)
+                ))
+
+        return chats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/chat/{session_id}")
+async def get_chat_conversation(session_id: str):
+    """Get full conversation history for a session (read-only mode)"""
+    try:
+        if session_id not in rag_system.session_manager.sessions:
+            raise HTTPException(status_code=404, detail="Chat not found")
+
+        messages = rag_system.session_manager.sessions.get(session_id, [])
+
+        return {
+            "session_id": session_id,
+            "messages": [
+                {
+                    "role": msg.role,
+                    "content": msg.content
+                }
+                for msg in messages
+            ]
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

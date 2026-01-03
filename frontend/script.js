@@ -5,7 +5,7 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, chatsList;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,10 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
-    
+    chatsList = document.getElementById('chatsList');
+
     setupEventListeners();
     createNewSession();
     loadCourseStats();
+    loadChatHistory();
 });
 
 // Event Listeners
@@ -29,7 +31,7 @@ function setupEventListeners() {
         if (e.key === 'Enter') sendMessage();
     });
     
-    
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -37,6 +39,18 @@ function setupEventListeners() {
             chatInput.value = question;
             sendMessage();
         });
+    });
+
+    // New Chat button
+    document.getElementById('newChatButton').addEventListener('click', createNewSession);
+
+    // Chat history items (event delegation)
+    document.addEventListener('click', (e) => {
+        const chatItem = e.target.closest('.chat-item');
+        if (chatItem) {
+            const sessionId = chatItem.getAttribute('data-session-id');
+            loadChatReadOnly(sessionId);
+        }
     });
 }
 
@@ -162,6 +176,9 @@ async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+
+    // Refresh chat history list
+    await loadChatHistory();
 }
 
 // Load course statistics
@@ -200,4 +217,95 @@ async function loadCourseStats() {
             courseTitles.innerHTML = '<span class="error">Failed to load courses</span>';
         }
     }
+}
+
+// Load chat history
+async function loadChatHistory() {
+    if (!chatsList) return;
+
+    try {
+        const response = await fetch(`${API_URL}/chat-history`);
+        if (!response.ok) throw new Error('Failed to load chat history');
+
+        const chats = await response.json();
+
+        if (chats.length > 0) {
+            chatsList.innerHTML = chats
+                .map(chat => `
+                    <button
+                        class="chat-item"
+                        data-session-id="${chat.session_id}"
+                        title="${escapeHtml(chat.title)}"
+                    >
+                        ${escapeHtml(chat.title)}
+                    </button>
+                `)
+                .join('');
+        } else {
+            chatsList.innerHTML = '<div class="empty-chats">No chats yet</div>';
+        }
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+        chatsList.innerHTML = '<div class="empty-chats">Error loading chats</div>';
+    }
+}
+
+// Load and display specific chat in read-only mode
+async function loadChatReadOnly(sessionId) {
+    try {
+        const response = await fetch(`${API_URL}/chat/${sessionId}`);
+        if (!response.ok) throw new Error('Failed to load chat');
+
+        const data = await response.json();
+        displayChatModal(data.messages, sessionId);
+
+    } catch (error) {
+        console.error('Error loading chat:', error);
+        alert(`Error loading chat: ${error.message}`);
+    }
+}
+
+// Display chat in modal (read-only)
+function displayChatModal(messages, sessionId) {
+    let overlay = document.getElementById('chatModalOverlay');
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'chatModalOverlay';
+        overlay.className = 'chat-modal-overlay';
+        overlay.innerHTML = `
+            <div class="chat-modal" id="chatModal">
+                <div class="chat-modal-header">
+                    <h2 class="chat-modal-title">Chat History</h2>
+                    <button class="chat-modal-close" id="chatModalClose">&times;</button>
+                </div>
+                <div class="chat-modal-messages" id="chatModalMessages"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('chatModalClose').addEventListener('click', () => {
+            overlay.classList.remove('active');
+        });
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.classList.remove('active');
+            }
+        });
+    }
+
+    const modalMessages = document.getElementById('chatModalMessages');
+    modalMessages.innerHTML = messages
+        .map(msg => `
+            <div class="chat-modal-message ${msg.role}">
+                <div class="chat-modal-message-content">
+                    ${msg.role === 'assistant' ? marked.parse(msg.content) : escapeHtml(msg.content)}
+                </div>
+            </div>
+        `)
+        .join('');
+
+    overlay.classList.add('active');
+    modalMessages.scrollTop = modalMessages.scrollHeight;
 }

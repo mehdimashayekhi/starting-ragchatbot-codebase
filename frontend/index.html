@@ -19,6 +19,25 @@
         <div class="main-content">
             <!-- Left Sidebar -->
             <aside class="sidebar">
+                <!-- New Chat Button -->
+                <div class="sidebar-section">
+                    <button id="newChatButton" class="new-chat-button">
+                        + NEW CHAT
+                    </button>
+                </div>
+
+                <!-- Your Chats -->
+                <div class="sidebar-section">
+                    <details class="chats-collapsible">
+                        <summary class="chats-header">Your Chats</summary>
+                        <div class="chat-list-container">
+                            <div id="chatsList" class="chat-list">
+                                <div class="loading">Loading chats...</div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
                 <!-- Course Stats -->
                 <div class="sidebar-section">
                     <details class="stats-collapsible">

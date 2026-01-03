@@ -25,3 +25,9 @@ class SourceCitation(BaseModel):
     """Citation to course material with optional link"""
     title: str                    # "Course Title - Lesson N"
     url: Optional[str] = None     # Lesson video URL
+
+class ChatHistoryItem(BaseModel):
+    """Single chat session for history display in sidebar"""
+    session_id: str           # Unique session identifier (e.g., "session_5")
+    title: str               # First user message (truncated to 50 chars)
+    message_count: int       # Total messages in this conversation
