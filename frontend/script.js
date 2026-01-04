@@ -18,11 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
     chatsList = document.getElementById('chatsList');
     themeToggle = document.getElementById('themeToggle');
 
+    // Initialize theme before setting up event listeners
+    initializeTheme();
+
+    // Setup event listeners after all DOM elements are initialized
     setupEventListeners();
+
     createNewSession();
     loadCourseStats();
     loadChatHistory();
-    initializeTheme();
 });
 
 // Event Listeners
